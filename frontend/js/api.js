@@ -8,7 +8,7 @@ const api = {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
         });
-        return this._handleResponse(response);
+        return await this._handleResponse(response);
     },
     async post(endpoint, data) {
         const response = await fetch(`${API_CONFIG.baseUrl}${endpoint}`, {
@@ -16,7 +16,7 @@ const api = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        return this._handleResponse(response);
+        return await this._handleResponse(response);
     },
     async put(endpoint, data) {
         const response = await fetch(`${API_CONFIG.baseUrl}${endpoint}`, {
@@ -24,22 +24,30 @@ const api = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        return this._handleResponse(response);
+        return await this._handleResponse(response);
     },
     async delete(endpoint) {
         const response = await fetch(`${API_CONFIG.baseUrl}${endpoint}`, {
             method: 'DELETE'
         });
-        return this._handleResponse(response);
+        return await this._handleResponse(response);
     },
-    _handleResponse(response) {
-        if (!response.ok) {
-            throw new Error(`Error API: ${response.status} ${response.statusText}`);
-        }
+    async _handleResponse(response) {
         const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-            return response.json();
+        const isJson = contentType && contentType.includes('application/json');
+
+        if (!response.ok) {
+            let mensaje = `${response.status} ${response.statusText}`;
+            if (isJson) {
+                try {
+                    const body = await response.json();
+                    if (body.mensaje) mensaje = body.mensaje;
+                } catch (_) {}
+            }
+            throw new Error(mensaje);
         }
+
+        if (isJson) return response.json();
         return response.text();
     }
 };

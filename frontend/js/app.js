@@ -10,7 +10,7 @@ async function init() {
     if (!statusEl) return;
 
     try {
-        await api.get('/weatherforecast');
+        await api.get('/health');
         statusEl.className = 'alert alert-success mb-0';
         statusEl.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Conectado al servidor. Sistema listo para usar.';
     } catch (error) {
