@@ -32,6 +32,12 @@ const api = {
         });
         return await this._handleResponse(response);
     },
+    async patch(endpoint) {
+        const response = await fetch(`${API_CONFIG.baseUrl}${endpoint}`, {
+            method: 'PATCH'
+        });
+        return await this._handleResponse(response);
+    },
     async _handleResponse(response) {
         const contentType = response.headers.get('content-type');
         const isJson = contentType && contentType.includes('application/json');

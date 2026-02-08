@@ -1,5 +1,5 @@
 /**
- * Plan de Cuentas - Listar y crear cuentas contables
+ * Plan de Cuentas - CRUD de cuentas contables
  */
 const TIPOS_CUENTA = {
     1: 'Activo',
@@ -9,9 +9,32 @@ const TIPOS_CUENTA = {
     5: 'Gasto'
 };
 
+let cuentaEditando = null;
+let cuentaEliminar = null;
+
 document.addEventListener('DOMContentLoaded', () => {
     cargarCuentas();
-    document.getElementById('formNuevaCuenta').addEventListener('submit', guardarCuenta);
+    document.getElementById('formCuenta').addEventListener('submit', guardarCuenta);
+    document.getElementById('btnNuevaCuenta').addEventListener('click', abrirModalNueva);
+    document.getElementById('btnConfirmarEliminar').addEventListener('click', confirmarEliminar);
+
+    document.getElementById('modalCuenta').addEventListener('hidden.bs.modal', () => {
+        cuentaEditando = null;
+        document.getElementById('modalCuentaTitulo').innerHTML = '<i class="bi bi-plus-circle me-2"></i>Nueva cuenta contable';
+    });
+});
+
+document.getElementById('tabla-cuentas').addEventListener('click', (e) => {
+    const btnEditar = e.target.closest('.btn-editar');
+    const btnEliminar = e.target.closest('.btn-eliminar');
+    if (btnEditar) {
+        e.preventDefault();
+        editarCuenta(parseInt(btnEditar.dataset.id, 10));
+    }
+    if (btnEliminar) {
+        e.preventDefault();
+        solicitarEliminar(parseInt(btnEliminar.dataset.id, 10), btnEliminar.dataset.nombre);
+    }
 });
 
 async function cargarCuentas() {
@@ -38,6 +61,14 @@ async function cargarCuentas() {
                     <td><span class="badge bg-secondary">${TIPOS_CUENTA[c.tipo] || c.tipo}</span></td>
                     <td class="text-muted small">${escapeHtml(c.descripcion || '-')}</td>
                     <td>${c.activa ? '<span class="badge bg-success">Activa</span>' : '<span class="badge bg-secondary">Inactiva</span>'}</td>
+                    <td class="text-end">
+                        <button type="button" class="btn btn-sm btn-outline-primary btn-editar" data-id="${c.id}" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar" data-id="${c.id}" data-nombre="${escapeHtml(c.codigo + ' - ' + c.nombre)}" title="Eliminar">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
                 </tr>`
             ).join('');
         }
@@ -47,6 +78,31 @@ async function cargarCuentas() {
         mostrarAlerta('danger', `Error al cargar cuentas: ${error.message}`);
         tabla.closest('.table-responsive').classList.add('d-none');
         sinCuentas.classList.remove('d-none');
+    }
+}
+
+function abrirModalNueva() {
+    cuentaEditando = null;
+    document.getElementById('modalCuentaTitulo').innerHTML = '<i class="bi bi-plus-circle me-2"></i>Nueva cuenta contable';
+    document.getElementById('formCuenta').reset();
+    document.getElementById('formCuenta').activa.checked = true;
+    document.getElementById('error-formulario').classList.add('d-none');
+}
+
+async function editarCuenta(id) {
+    try {
+        const cuenta = await api.get(`/cuentascontables/${id}`);
+        cuentaEditando = cuenta;
+        document.getElementById('modalCuentaTitulo').innerHTML = '<i class="bi bi-pencil me-2"></i>Editar cuenta contable';
+        document.getElementById('formCuenta').codigo.value = cuenta.codigo;
+        document.getElementById('formCuenta').nombre.value = cuenta.nombre;
+        document.getElementById('formCuenta').tipo.value = cuenta.tipo;
+        document.getElementById('formCuenta').descripcion.value = cuenta.descripcion || '';
+        document.getElementById('formCuenta').activa.checked = cuenta.activa;
+        document.getElementById('error-formulario').classList.add('d-none');
+        new bootstrap.Modal(document.getElementById('modalCuenta')).show();
+    } catch (error) {
+        mostrarAlerta('danger', `Error al cargar la cuenta: ${error.message}`);
     }
 }
 
@@ -69,19 +125,49 @@ async function guardarCuenta(e) {
     };
 
     try {
-        await api.post('/cuentascontables', cuenta);
-        const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevaCuenta'));
-        modal.hide();
+        if (cuentaEditando) {
+            cuenta.id = cuentaEditando.id;
+            await api.put(`/cuentascontables/${cuentaEditando.id}`, cuenta);
+            mostrarAlerta('success', 'Cuenta actualizada correctamente.');
+        } else {
+            await api.post('/cuentascontables', cuenta);
+            mostrarAlerta('success', 'Cuenta creada correctamente.');
+        }
+        bootstrap.Modal.getInstance(document.getElementById('modalCuenta')).hide();
         form.reset();
         form.activa.checked = true;
         cargarCuentas();
-        mostrarAlerta('success', 'Cuenta creada correctamente.');
     } catch (error) {
         errorEl.textContent = error.message;
         errorEl.classList.remove('d-none');
     } finally {
         btnGuardar.disabled = false;
         btnGuardar.querySelector('.btn-text').textContent = 'Guardar';
+    }
+}
+
+function solicitarEliminar(id, nombre) {
+    cuentaEliminar = id;
+    document.getElementById('eliminarCuentaNombre').textContent = nombre;
+    new bootstrap.Modal(document.getElementById('modalEliminar')).show();
+}
+
+async function confirmarEliminar() {
+    if (!cuentaEliminar) return;
+
+    const btnEliminar = document.getElementById('btnConfirmarEliminar');
+    btnEliminar.disabled = true;
+
+    try {
+        await api.delete(`/cuentascontables/${cuentaEliminar}`);
+        bootstrap.Modal.getInstance(document.getElementById('modalEliminar')).hide();
+        mostrarAlerta('success', 'Cuenta eliminada correctamente.');
+        cargarCuentas();
+    } catch (error) {
+        mostrarAlerta('danger', `Error al eliminar: ${error.message}`);
+    } finally {
+        btnEliminar.disabled = false;
+        cuentaEliminar = null;
     }
 }
 

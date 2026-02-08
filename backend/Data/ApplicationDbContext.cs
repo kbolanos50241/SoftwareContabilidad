@@ -11,6 +11,7 @@ public class ApplicationDbContext : DbContext
     }
 
     public DbSet<CuentaContable> CuentasContables => Set<CuentaContable>();
+    public DbSet<Usuario> Usuarios => Set<Usuario>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -21,6 +22,15 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.Codigo).HasMaxLength(20);
             entity.Property(e => e.Nombre).HasMaxLength(200);
             entity.Property(e => e.Descripcion).HasMaxLength(500);
+        });
+
+        modelBuilder.Entity<Usuario>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.NombreUsuario).IsUnique();
+            entity.Property(e => e.NombreCompleto).HasMaxLength(200);
+            entity.Property(e => e.NombreUsuario).HasMaxLength(50);
+            entity.Property(e => e.PasswordHash).HasMaxLength(256);
         });
     }
 }

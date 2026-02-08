@@ -47,4 +47,22 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// Seed usuario admin de prueba si no existe
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    if (!await context.Usuarios.AnyAsync(u => u.NombreUsuario == "admin"))
+    {
+        context.Usuarios.Add(new SoftwareContabilidad.Api.Models.Usuario
+        {
+            NombreCompleto = "Administrador",
+            NombreUsuario = "admin",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("1234"),
+            Rol = SoftwareContabilidad.Api.Models.RolUsuario.Admin,
+            Estado = SoftwareContabilidad.Api.Models.EstadoUsuario.Activo
+        });
+        await context.SaveChangesAsync();
+    }
+}
+
 app.Run();
