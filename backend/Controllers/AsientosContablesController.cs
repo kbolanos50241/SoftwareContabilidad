@@ -19,13 +19,35 @@ public class AsientosContablesController : ControllerBase
 
     /// <summary>
     /// Obtiene todos los asientos contables con sus movimientos.
+    /// Filtros opcionales: fechaDesde, fechaHasta (formato: yyyy-MM-dd), cuentaContableId.
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<AsientoResponse>>> GetAll()
+    public async Task<ActionResult<IEnumerable<AsientoResponse>>> GetAll(
+        [FromQuery] DateTime? fechaDesde,
+        [FromQuery] DateTime? fechaHasta,
+        [FromQuery] int? cuentaContableId)
     {
-        var asientos = await _context.AsientosContables
+        var query = _context.AsientosContables
             .Include(a => a.Movimientos)
             .ThenInclude(m => m.CuentaContable)
+            .AsQueryable();
+
+        if (fechaDesde.HasValue)
+        {
+            var desde = DateTime.SpecifyKind(fechaDesde.Value.Date, DateTimeKind.Utc);
+            query = query.Where(a => a.Fecha >= desde);
+        }
+
+        if (fechaHasta.HasValue)
+        {
+            var hasta = DateTime.SpecifyKind(fechaHasta.Value.Date.AddDays(1), DateTimeKind.Utc);
+            query = query.Where(a => a.Fecha < hasta);
+        }
+
+        if (cuentaContableId.HasValue)
+            query = query.Where(a => a.Movimientos.Any(m => m.CuentaContableId == cuentaContableId.Value));
+
+        var asientos = await query
             .OrderByDescending(a => a.Fecha)
             .ThenByDescending(a => a.Id)
             .ToListAsync();

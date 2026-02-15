@@ -6,11 +6,14 @@ let asientoEliminar = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     await cargarCuentas();
+    poblarFiltroCuentas();
     cargarAsientos();
     document.getElementById('formAsiento').addEventListener('submit', guardarAsiento);
     document.getElementById('btnNuevoAsiento').addEventListener('click', abrirModalNuevo);
     document.getElementById('btnAgregarMovimiento').addEventListener('click', agregarMovimiento);
     document.getElementById('btnConfirmarEliminar').addEventListener('click', confirmarEliminar);
+    document.getElementById('btnFiltrar').addEventListener('click', () => cargarAsientos());
+    document.getElementById('btnLimpiarFiltros').addEventListener('click', limpiarFiltros);
 
     document.getElementById('modalAsiento').addEventListener('shown.bs.modal', () => {
         if (document.getElementById('movimientos-container').children.length === 0) {
@@ -51,6 +54,33 @@ async function cargarCuentas() {
     }
 }
 
+function poblarFiltroCuentas() {
+    const select = document.getElementById('filtroCuenta');
+    const actual = select.value;
+    select.innerHTML = '<option value="">Todas las cuentas</option>' +
+        cuentas.map(c => `<option value="${c.id}">${escapeHtml(c.codigo)} - ${escapeHtml(c.nombre)}</option>`).join('');
+    select.value = actual || '';
+}
+
+function getUrlFiltros() {
+    const params = new URLSearchParams();
+    const fechaDesde = document.getElementById('filtroFechaDesde').value;
+    const fechaHasta = document.getElementById('filtroFechaHasta').value;
+    const cuentaId = document.getElementById('filtroCuenta').value;
+    if (fechaDesde) params.set('fechaDesde', fechaDesde);
+    if (fechaHasta) params.set('fechaHasta', fechaHasta);
+    if (cuentaId) params.set('cuentaContableId', cuentaId);
+    const qs = params.toString();
+    return qs ? '/asientoscontables?' + qs : '/asientoscontables';
+}
+
+function limpiarFiltros() {
+    document.getElementById('filtroFechaDesde').value = '';
+    document.getElementById('filtroFechaHasta').value = '';
+    document.getElementById('filtroCuenta').value = '';
+    cargarAsientos();
+}
+
 async function cargarAsientos() {
     const cargando = document.getElementById('cargando');
     const contenedor = document.getElementById('tabla-contenedor');
@@ -58,7 +88,7 @@ async function cargarAsientos() {
     const sinAsientos = document.getElementById('sin-asientos');
 
     try {
-        const asientos = await api.get('/asientoscontables');
+        const asientos = await api.get(getUrlFiltros());
         cargando.classList.add('d-none');
         contenedor.classList.remove('d-none');
 

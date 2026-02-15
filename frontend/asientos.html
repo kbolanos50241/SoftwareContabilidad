@@ -61,6 +61,37 @@
                 <i class="bi bi-info-circle me-2"></i>El asiento debe tener al menos 2 movimientos y la suma del debe debe ser igual a la suma del haber.
             </div>
 
+            <div class="card mb-3">
+                <div class="card-body py-3">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label small mb-0">Desde</label>
+                            <input type="date" class="form-control form-control-sm" id="filtroFechaDesde">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small mb-0">Hasta</label>
+                            <input type="date" class="form-control form-control-sm" id="filtroFechaHasta">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small mb-0">Cuenta</label>
+                            <select class="form-select form-select-sm" id="filtroCuenta">
+                                <option value="">Todas las cuentas</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-sm btn-primary w-100" id="btnFiltrar">
+                                <i class="bi bi-funnel me-1"></i>Filtrar
+                            </button>
+                        </div>
+                        <div class="col-md-2 col-6">
+                            <button type="button" class="btn btn-sm btn-outline-secondary w-100" id="btnLimpiarFiltros">
+                                <i class="bi bi-x-lg me-1"></i>Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div id="alerta" class="alert d-none" role="alert"></div>
 
             <div class="card">
